@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import eventService from "../services/eventService";
 import registrationService from "../services/registrationService";
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,9 +48,13 @@ const EventDetails = () => {
     try {
       await registrationService.registerForEvent(id);
       alert("Successfully registered for the event!");
+
+      // Update state immediately
       setIsRegistered(true);
-      fetchEventDetails();
-      checkRegistration();
+
+      // Refresh event details and check registration
+      await fetchEventDetails();
+      await checkRegistration();
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
     }
@@ -63,12 +69,17 @@ const EventDetails = () => {
       if (registrationId) {
         await registrationService.cancelRegistration(registrationId);
         alert("Registration cancelled successfully");
+
+        // Reset registration state immediately
         setIsRegistered(false);
         setRegistrationId(null);
-        fetchEventDetails();
+
+        // Refresh event details to get updated count
+        await fetchEventDetails();
       }
     } catch (err) {
       alert("Failed to cancel registration");
+      console.error(err);
     }
   };
 
@@ -218,42 +229,87 @@ const EventDetails = () => {
           </div>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            marginTop: "2rem",
-            flexWrap: "wrap",
-          }}
-        >
-          {isRegistered ? (
-            <button
-              className="btn btn-danger"
-              onClick={handleCancelRegistration}
-            >
-              Cancel Registration
-            </button>
-          ) : (
-            <button
-              className="btn btn-primary"
-              onClick={handleRegister}
-              disabled={event.registeredCount >= event.capacity}
-            >
-              {event.registeredCount >= event.capacity
-                ? "Event Full"
-                : "Register Now"}
-            </button>
-          )}
+        {/* Only show register buttons for students */}
+        {user?.role === "student" && (
+          <div>
+            {/* Show registration closed message */}
+            {(!event.registrationOpen || event.status !== "upcoming") && (
+              <div
+                style={{
+                  padding: "1rem",
+                  marginTop: "1rem",
+                  backgroundColor: "#fee",
+                  border: "2px solid #d32f2f",
+                  borderRadius: "8px",
+                  color: "#d32f2f",
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
+                  textAlign: "center",
+                }}
+              >
+                🔒 Registrations Closed
+                {event.status === "ongoing" && " - Event is currently ongoing"}
+                {event.status === "completed" && " - Event has ended"}
+              </div>
+            )}
 
-          {isRegistered && (
-            <button
-              className="btn btn-secondary"
-              onClick={() => alert("You are registered for this event!")}
-            >
-              ✓ You are registered
-            </button>
-          )}
-        </div>
+            {/* Show registration buttons only if registration is open */}
+            {event.registrationOpen && event.status === "upcoming" && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  marginTop: "2rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                {isRegistered ? (
+                  <>
+                    <button
+                      className="btn btn-danger"
+                      onClick={handleCancelRegistration}
+                    >
+                      Cancel Registration
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() =>
+                        alert("You are registered for this event!")
+                      }
+                    >
+                      ✓ You are registered
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleRegister}
+                    disabled={event.registeredCount >= event.capacity}
+                  >
+                    {event.registeredCount >= event.capacity
+                      ? "Event Full"
+                      : "Register Now"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Message for admin and organizer */}
+        {(user?.role === "admin" || user?.role === "organizer") && (
+          <div
+            style={{
+              marginTop: "2rem",
+              padding: "1rem",
+              backgroundColor: "#f0f0f0",
+              borderRadius: "8px",
+              color: "#666",
+            }}
+          >
+            ℹ️ Admins and Organizers cannot register for events
+          </div>
+        )}
       </div>
     </div>
   );

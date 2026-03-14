@@ -23,6 +23,13 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Auto-refresh dashboard stats every 30 seconds to capture new registrations
+    const refreshInterval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -152,8 +159,11 @@ const AdminDashboard = () => {
     }
 
     try {
-      await adminService.sendAnnouncement(announcementData);
-      alert("Announcement sent successfully!");
+      const response = await adminService.sendAnnouncement(announcementData);
+      const data = response.data;
+      alert(
+        `Announcement sent successfully!\n\nRecipients: ${data.data?.totalRecipients || 0}\nTarget: ${data.data?.targetRole || "all"}`,
+      );
       setAnnouncementData({ title: "", message: "", targetRole: "all" });
     } catch (error) {
       alert(error.response?.data?.message || "Error sending announcement");
@@ -279,15 +289,50 @@ const AdminDashboard = () => {
           <div className="dashboard-sections">
             <div className="dashboard-section">
               <div className="section-header">
-                <h2>📊 Users by Role</h2>
+                <h2>� Users by Role</h2>
               </div>
-              <div className="analytics-list">
-                {stats.usersByRole.map((item) => (
-                  <div key={item._id} className="analytics-item">
-                    <span className="analytics-label">{item._id}</span>
-                    <span className="analytics-value">{item.count}</span>
-                  </div>
-                ))}
+
+              {/* Role-based user count cards */}
+              <div className="stats-grid">
+                {stats.usersByRole.map((item) => {
+                  const roleIcons = {
+                    admin: "👑",
+                    organizer: "🎯",
+                    student: "🎓",
+                  };
+                  const roleColors = {
+                    admin: "stat-error",
+                    organizer: "stat-warning",
+                    student: "stat-info",
+                  };
+
+                  return (
+                    <div
+                      key={item._id}
+                      className={`stat-card ${roleColors[item._id] || "stat-primary"}`}
+                    >
+                      <div className="stat-icon">
+                        {roleIcons[item._id] || "👤"}
+                      </div>
+                      <div className="stat-content">
+                        <h3>{item.count}</h3>
+                        <p>
+                          {item._id.charAt(0).toUpperCase() + item._id.slice(1)}
+                          s
+                        </p>
+                      </div>
+                      <button
+                        className="view-role-btn"
+                        onClick={() => {
+                          setRoleFilter(item._id);
+                          setActiveTab("users");
+                        }}
+                      >
+                        View All →
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -406,6 +451,12 @@ const AdminDashboard = () => {
         <div className="dashboard-section">
           <div className="section-header">
             <h2>👥 User Management</h2>
+            {roleFilter && (
+              <span className="filter-badge">
+                Filtering:{" "}
+                {roleFilter.charAt(0).toUpperCase() + roleFilter.slice(1)}s
+              </span>
+            )}
           </div>
 
           <div className="filters-row">
@@ -426,69 +477,92 @@ const AdminDashboard = () => {
               <option value="organizer">Organizer</option>
               <option value="admin">Admin</option>
             </select>
+            {(roleFilter || searchTerm) && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setRoleFilter("");
+                  setSearchTerm("");
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
 
-          <div className="events-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Roll Number</th>
-                  <th>Role</th>
-                  <th>Branch</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user._id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.rollNumber}</td>
-                    <td>
-                      <span className={`approval-badge approval-${user.role}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td>{user.branch}</td>
-                    <td>
-                      {user.isActive !== false ? (
-                        <span className="status-badge status-ongoing">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="status-badge status-cancelled">
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        onChange={(e) =>
-                          handleUpdateUserRole(user._id, e.target.value)
-                        }
-                        className="role-select"
-                        defaultValue={user.role}
-                      >
-                        <option value="student">Student</option>
-                        <option value="organizer">Organizer</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                      <button
-                        className="btn btn-small btn-danger"
-                        onClick={() => handleDeactivateUser(user._id)}
-                        style={{ marginLeft: "0.5rem" }}
-                      >
-                        Deactivate
-                      </button>
-                    </td>
+          {users.length > 0 ? (
+            <div className="events-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Roll Number</th>
+                    <th>Role</th>
+                    <th>Branch</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user._id}>
+                      <td>{user.name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.rollNumber}</td>
+                      <td>
+                        <span
+                          className={`approval-badge approval-${user.role}`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
+                      <td>{user.branch}</td>
+                      <td>
+                        {user.isActive !== false ? (
+                          <span className="status-badge status-ongoing">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="status-badge status-cancelled">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <select
+                          onChange={(e) =>
+                            handleUpdateUserRole(user._id, e.target.value)
+                          }
+                          className="role-select"
+                          defaultValue={user.role}
+                        >
+                          <option value="student">Student</option>
+                          <option value="organizer">Organizer</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        <button
+                          className="btn btn-small btn-danger"
+                          onClick={() => handleDeactivateUser(user._id)}
+                          style={{ marginLeft: "0.5rem" }}
+                        >
+                          Deactivate
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>
+                {roleFilter || searchTerm
+                  ? "No users found matching your criteria"
+                  : "No users available"}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -511,9 +585,12 @@ const AdminDashboard = () => {
                   })
                 }
               >
-                <option value="all">All Users</option>
+                <option value="all">
+                  All Users (Admins, Organizers, Students)
+                </option>
                 <option value="student">Students Only</option>
                 <option value="organizer">Organizers Only</option>
+                <option value="admin">Admins Only</option>
               </select>
             </div>
 

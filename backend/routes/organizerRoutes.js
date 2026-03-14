@@ -6,6 +6,7 @@ const {
   getEventParticipants,
   exportParticipants,
   notifyParticipants,
+  updateEvent,
   updateEventStatus,
   closeRegistrations,
   getEventAnalytics,
@@ -20,6 +21,7 @@ router.get("/stats", getOrganizerStats);
 router.get("/events/:id/participants", getEventParticipants);
 router.get("/events/:id/export", exportParticipants);
 router.post("/events/:id/notify", notifyParticipants);
+router.put("/events/:id", updateEvent);
 router.put("/events/:id/status", updateEventStatus);
 router.put("/events/:id/close-registration", closeRegistrations);
 router.get("/events/:id/analytics", getEventAnalytics);

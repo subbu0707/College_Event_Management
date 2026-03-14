@@ -22,6 +22,11 @@ const eventService = {
   },
 
   // Organizer endpoints
+  createEvent: async (eventData) => {
+    const response = await api.post("/events", eventData);
+    return response.data;
+  },
+
   getMyEvents: async () => {
     const response = await api.get("/events/organizer/my-events");
     return response.data;

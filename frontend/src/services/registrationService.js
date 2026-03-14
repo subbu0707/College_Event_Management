@@ -18,6 +18,11 @@ const registrationService = {
     return response.data;
   },
 
+  getStudentStats: async () => {
+    const response = await api.get("/registrations/student-stats");
+    return response.data;
+  },
+
   cancelRegistration: async (registrationId) => {
     const response = await api.delete(
       `/registrations/cancel/${registrationId}`,

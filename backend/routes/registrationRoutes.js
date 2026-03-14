@@ -5,6 +5,7 @@ const {
   cancelRegistration,
   checkRegistration,
   submitFeedback,
+  getStudentStats,
 } = require("../controllers/registrationController");
 const { auth } = require("../middleware/auth");
 
@@ -15,6 +16,9 @@ router.post("/register", auth, registerForEvent);
 
 // Get my registrations (protected)
 router.get("/my-registrations", auth, getMyRegistrations);
+
+// Get student dashboard statistics (protected)
+router.get("/student-stats", auth, getStudentStats);
 
 // Check if registered for event (protected)
 router.get("/check/:eventId", auth, checkRegistration);

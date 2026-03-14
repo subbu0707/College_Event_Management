@@ -4,6 +4,7 @@ const {
   getEventById,
   getEventsByCategory,
   searchEvents,
+  createEvent,
 } = require("../controllers/eventController");
 const {
   getMyEvents,
@@ -22,6 +23,7 @@ router.get("/search/:keyword", searchEvents);
 router.get("/:id", getEventById);
 
 // Organizer routes
+router.post("/", auth, authorize("organizer", "admin"), createEvent);
 router.get(
   "/organizer/my-events",
   auth,

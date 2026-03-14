@@ -28,6 +28,7 @@ const notificationSchema = new mongoose.Schema({
       "feedback_request",
       "system_message",
       "waitlist_notification",
+      "announcement",
     ],
     default: "event_update",
   },

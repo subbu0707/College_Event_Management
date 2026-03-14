@@ -14,7 +14,8 @@ const organizerService = {
   notifyParticipants: (eventId, data) =>
     api.post(`/organizer/events/${eventId}/notify`, data),
 
-  // Event control
+  // Event management
+  updateEvent: (eventId, data) => api.put(`/organizer/events/${eventId}`, data),
   updateEventStatus: (eventId, status) =>
     api.put(`/organizer/events/${eventId}/status`, { status }),
   closeRegistrations: (eventId) =>

@@ -60,6 +60,20 @@ const userSchema = new mongoose.Schema({
       ref: "Event",
     },
   ],
+  statistics: {
+    activeRegistrations: {
+      type: Number,
+      default: 0,
+    },
+    completedEvents: {
+      type: Number,
+      default: 0,
+    },
+    upcomingEvents: {
+      type: Number,
+      default: 0,
+    },
+  },
   isActive: {
     type: Boolean,
     default: true,

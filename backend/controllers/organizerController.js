@@ -105,26 +105,35 @@ exports.getEventParticipants = async (req, res, next) => {
 
     const participants = await Registration.find({
       event: req.params.id,
-      status: "approved",
+      status: "registered",
     })
-      .populate("user", "name email rollNumber branch phone semester")
+      .populate("student", "name email rollNumber branch phone semester")
       .sort({ createdAt: 1 });
 
-    const waitlist = await Registration.find({
+    const attended = await Registration.find({
       event: req.params.id,
-      status: "waitlisted",
+      status: "attended",
     })
-      .populate("user", "name email rollNumber branch")
+      .populate("student", "name email rollNumber branch phone semester")
+      .sort({ createdAt: 1 });
+
+    const cancelled = await Registration.find({
+      event: req.params.id,
+      status: "cancelled",
+    })
+      .populate("student", "name email rollNumber branch")
       .sort({ createdAt: 1 });
 
     res.status(200).json({
       success: true,
       data: {
         participants,
-        waitlist,
+        attended,
+        cancelled,
         count: {
-          approved: participants.length,
-          waitlisted: waitlist.length,
+          registered: participants.length,
+          attended: attended.length,
+          cancelled: cancelled.length,
         },
       },
     });
@@ -209,15 +218,15 @@ exports.notifyParticipants = async (req, res, next) => {
 
     const registrations = await Registration.find({
       event: req.params.id,
-      status: "approved",
+      status: "registered",
     });
 
     const notifications = registrations.map((reg) => ({
-      user: reg.user,
+      recipient: reg.student,
       title: `${event.title}: ${title}`,
       message,
       type: "event_update",
-      relatedEvent: event._id,
+      event: event._id,
     }));
 
     await Notification.insertMany(notifications);
@@ -225,6 +234,80 @@ exports.notifyParticipants = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: `Notification sent to ${registrations.length} participants`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update event details (date, time, venue)
+// @route   PUT /api/organizer/events/:id
+exports.updateEvent = async (req, res, next) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Check if user is the organizer
+    if (event.organizer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this event",
+      });
+    }
+
+    // Extract allowed fields for update
+    const { startDate, endDate, venue } = req.body;
+
+    // Validate dates if provided
+    if (startDate && new Date(startDate) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date cannot be in the past",
+      });
+    }
+
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "End date must be after start date",
+      });
+    }
+
+    // Update only the allowed fields
+    if (startDate) event.startDate = startDate;
+    if (endDate) event.endDate = endDate;
+    if (venue) event.venue = venue;
+
+    await event.save();
+
+    // Notify registered participants about the update
+    const registrations = await Registration.find({
+      event: req.params.id,
+      status: "registered",
+    });
+
+    if (registrations.length > 0) {
+      const notifications = registrations.map((reg) => ({
+        recipient: reg.student,
+        title: `Event Updated: ${event.title}`,
+        message: `The event details have been updated. Please check the new date, time, or venue.`,
+        type: "event_update",
+        event: event._id,
+      }));
+
+      await Notification.insertMany(notifications);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Event updated successfully",
+      event,
     });
   } catch (error) {
     next(error);
@@ -267,15 +350,15 @@ exports.updateEventStatus = async (req, res, next) => {
     // Notify participants of status change
     const registrations = await Registration.find({
       event: event._id,
-      status: "approved",
+      status: "registered",
     });
 
     const notifications = registrations.map((reg) => ({
-      user: reg.user,
+      recipient: reg.student,
       title: `Event Status Updated: ${event.title}`,
       message: `The event status has been updated to "${status}".`,
       type: "event_update",
-      relatedEvent: event._id,
+      event: event._id,
     }));
 
     await Notification.insertMany(notifications);

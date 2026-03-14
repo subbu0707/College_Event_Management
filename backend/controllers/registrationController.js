@@ -18,12 +18,28 @@ exports.registerForEvent = async (req, res, next) => {
         .json({ success: false, message: "Event not found" });
     }
 
-    // Check if already registered
+    // Check if event is approved
+    if (event.approvalStatus !== "approved") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Event is not approved yet" });
+    }
+
+    // Check if registration is open
+    if (!event.registrationOpen || event.status !== "upcoming") {
+      return res.status(400).json({
+        success: false,
+        message: "Registration is closed for this event",
+      });
+    }
+
+    // Check if already registered (and registration is active)
     const existingRegistration = await Registration.findOne({
       student: studentId,
       event: eventId,
     });
-    if (existingRegistration) {
+
+    if (existingRegistration && existingRegistration.status === "registered") {
       return res
         .status(400)
         .json({ success: false, message: "Already registered for this event" });
@@ -36,23 +52,56 @@ exports.registerForEvent = async (req, res, next) => {
         .json({ success: false, message: "Event is full, cannot register" });
     }
 
-    // Create registration
-    const registration = new Registration({
-      student: studentId,
-      event: eventId,
-      status: "registered",
-    });
+    let registration;
 
-    await registration.save();
+    // If there's a cancelled registration, reactivate it
+    if (existingRegistration && existingRegistration.status === "cancelled") {
+      existingRegistration.status = "registered";
+      existingRegistration.registrationDate = Date.now();
+      registration = await existingRegistration.save();
+    } else {
+      // Create new registration
+      registration = new Registration({
+        student: studentId,
+        event: eventId,
+        status: "registered",
+      });
+      await registration.save();
+    }
 
     // Update event registered count
     event.registeredCount += 1;
-    event.registrations.push(registration._id);
+    // Only add registration to array if not already present
+    if (!event.registrations.includes(registration._id)) {
+      event.registrations.push(registration._id);
+    }
     await event.save();
 
-    // Update user registered events
+    // Update user registered events and statistics
     const user = await User.findById(studentId);
-    user.registeredEvents.push(eventId);
+    // Only add event to array if not already present
+    if (!user.registeredEvents.includes(eventId)) {
+      user.registeredEvents.push(eventId);
+    }
+
+    // Increment statistics
+    if (!user.statistics) {
+      user.statistics = {
+        activeRegistrations: 0,
+        completedEvents: 0,
+        upcomingEvents: 0,
+      };
+    }
+    user.statistics.activeRegistrations =
+      (user.statistics.activeRegistrations || 0) + 1;
+
+    // Check if event is upcoming
+    const now = new Date();
+    if (new Date(event.startDate) > now) {
+      user.statistics.upcomingEvents =
+        (user.statistics.upcomingEvents || 0) + 1;
+    }
+
     await user.save();
 
     // Create notification
@@ -124,12 +173,10 @@ exports.cancelRegistration = async (req, res, next) => {
 
     // Check if user is the one who registered
     if (registration.student.toString() !== studentId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to cancel this registration",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to cancel this registration",
+      });
     }
 
     // Update registration status
@@ -144,11 +191,34 @@ exports.cancelRegistration = async (req, res, next) => {
     );
     await event.save();
 
-    // Update user registered events
+    // Update user registered events and statistics
     const user = await User.findById(studentId);
     user.registeredEvents = user.registeredEvents.filter(
       (id) => id.toString() !== registration.event.toString(),
     );
+
+    // Decrement statistics
+    if (!user.statistics) {
+      user.statistics = {
+        activeRegistrations: 0,
+        completedEvents: 0,
+        upcomingEvents: 0,
+      };
+    }
+    user.statistics.activeRegistrations = Math.max(
+      0,
+      (user.statistics.activeRegistrations || 0) - 1,
+    );
+
+    // Check if event is/was upcoming
+    const now = new Date();
+    if (new Date(event.endDate) >= now) {
+      user.statistics.upcomingEvents = Math.max(
+        0,
+        (user.statistics.upcomingEvents || 0) - 1,
+      );
+    }
+
     await user.save();
 
     // Create notification
@@ -180,12 +250,78 @@ exports.checkRegistration = async (req, res, next) => {
     const registration = await Registration.findOne({
       student: studentId,
       event: eventId,
+      status: "registered", // Only check for active registrations
     });
 
     res.status(200).json({
       success: true,
       isRegistered: !!registration,
       registration: registration || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get student dashboard statistics
+// @route   GET /api/registrations/student-stats
+exports.getStudentStats = async (req, res, next) => {
+  try {
+    const studentId = req.user.id;
+    const now = new Date();
+
+    // Get user with statistics
+    const user = await User.findById(studentId);
+
+    // Get all registrations
+    const registrations = await Registration.find({
+      student: studentId,
+    }).populate("event");
+
+    // Calculate real-time statistics
+    const activeRegistrations = registrations.filter(
+      (reg) =>
+        reg.status === "registered" &&
+        reg.event &&
+        new Date(reg.event.endDate) >= now,
+    ).length;
+
+    const upcomingEvents = registrations.filter(
+      (reg) =>
+        reg.status === "registered" &&
+        reg.event &&
+        new Date(reg.event.startDate) > now,
+    ).length;
+
+    const completedEvents = registrations.filter(
+      (reg) =>
+        reg.event &&
+        (reg.status === "attended" ||
+          (reg.status === "registered" && new Date(reg.event.endDate) < now)),
+    ).length;
+
+    // Update user statistics if they're out of sync
+    if (!user.statistics) {
+      user.statistics = {
+        activeRegistrations: 0,
+        completedEvents: 0,
+        upcomingEvents: 0,
+      };
+    }
+
+    user.statistics.activeRegistrations = activeRegistrations;
+    user.statistics.upcomingEvents = upcomingEvents;
+    user.statistics.completedEvents = completedEvents;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        activeRegistrations,
+        upcomingEvents,
+        completedEvents,
+        totalRegistrations: registrations.length,
+      },
     });
   } catch (error) {
     next(error);
@@ -209,12 +345,10 @@ exports.submitFeedback = async (req, res, next) => {
 
     // Check if user is the one who registered
     if (registration.student.toString() !== studentId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to submit feedback for this registration",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to submit feedback for this registration",
+      });
     }
 
     // Update feedback

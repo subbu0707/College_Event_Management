@@ -25,13 +25,10 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch upcoming events
-      const eventsResponse = await eventService.getEvents({
-        status: "upcoming",
-        limit: 5,
-      });
+      // Fetch student statistics from backend
+      const statsResponse = await registrationService.getStudentStats();
 
-      // Fetch my registrations
+      // Fetch my registrations for detailed display
       const registrationsResponse =
         await registrationService.getMyRegistrations();
 
@@ -40,21 +37,35 @@ const StudentDashboard = () => {
         unreadOnly: true,
       });
 
-      setUpcomingEvents(eventsResponse.data || []);
-      setMyRegistrations(registrationsResponse.data || []);
+      const registrations = registrationsResponse.registrations || [];
 
-      // Calculate stats
-      const completedCount =
-        registrationsResponse.data?.filter((reg) => reg.status === "attended")
-          .length || 0;
+      // Sort by registration date (most recent first)
+      const sortedRegistrations = registrations.sort(
+        (a, b) => new Date(b.registrationDate) - new Date(a.registrationDate),
+      );
+      setMyRegistrations(sortedRegistrations);
 
+      // Filter registrations by event status for upcoming events display
+      const now = new Date();
+      const upcomingRegistrations = registrations.filter((reg) => {
+        if (!reg.event) return false;
+        const eventEndDate = new Date(reg.event.endDate);
+        return reg.status === "registered" && eventEndDate >= now;
+      });
+
+      // Get only registered events for upcoming section, sorted by start date
+      const upcomingEventsData = upcomingRegistrations
+        .map((reg) => reg.event)
+        .filter((event) => event !== null)
+        .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+      setUpcomingEvents(upcomingEventsData);
+
+      // Use stats from backend for accuracy
       setStats({
-        upcomingEvents: eventsResponse.data?.length || 0,
-        myRegistrations:
-          registrationsResponse.data?.filter(
-            (reg) => reg.status === "registered",
-          ).length || 0,
-        completedEvents: completedCount,
+        upcomingEvents: statsResponse.stats.upcomingEvents || 0,
+        myRegistrations: statsResponse.stats.activeRegistrations || 0,
+        completedEvents: statsResponse.stats.completedEvents || 0,
         unreadNotifications: notificationsResponse.unreadCount || 0,
       });
 
@@ -95,7 +106,7 @@ const StudentDashboard = () => {
           <div className="stat-icon">✅</div>
           <div className="stat-content">
             <h3>{stats.myRegistrations}</h3>
-            <p>My Registrations</p>
+            <p>Active Registrations</p>
           </div>
         </div>
 
@@ -119,8 +130,8 @@ const StudentDashboard = () => {
       <div className="dashboard-sections">
         <div className="dashboard-section">
           <div className="section-header">
-            <h2>🎪 Upcoming Events</h2>
-            <Link to="/events" className="btn-link">
+            <h2>🎪 My Upcoming Events</h2>
+            <Link to="/my-registrations" className="btn-link">
               View All →
             </Link>
           </div>
@@ -143,14 +154,15 @@ const StudentDashboard = () => {
                     <p className="event-venue">📍 {event.venue}</p>
                   </div>
                   <div className="event-card-mini-action">
-                    <span className="capacity-indicator">
-                      {event.registeredCount}/{event.capacity}
-                    </span>
+                    <span className="capacity-indicator">✅ Registered</span>
                   </div>
                 </Link>
               ))
             ) : (
-              <p className="empty-state">No upcoming events available</p>
+              <p className="empty-state">
+                No upcoming events. <Link to="/events">Browse events</Link> to
+                register!
+              </p>
             )}
           </div>
         </div>

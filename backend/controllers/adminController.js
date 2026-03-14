@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const Admin = require("../models/Admin");
+const Organizer = require("../models/Organizer");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 const Notification = require("../models/Notification");
@@ -7,7 +9,12 @@ const Notification = require("../models/Notification");
 // @route   GET /api/admin/stats
 exports.getAdminStats = async (req, res, next) => {
   try {
-    const totalUsers = await User.countDocuments();
+    // Count users from all three models
+    const studentCount = await User.countDocuments();
+    const adminCount = await Admin.countDocuments();
+    const organizerCount = await Organizer.countDocuments();
+    const totalUsers = studentCount + adminCount + organizerCount;
+
     const totalEvents = await Event.countDocuments();
     const totalRegistrations = await Registration.countDocuments();
     const pendingApprovals = await Event.countDocuments({
@@ -23,15 +30,12 @@ exports.getAdminStats = async (req, res, next) => {
       status: "completed",
     });
 
-    // Users by role
-    const usersByRole = await User.aggregate([
-      {
-        $group: {
-          _id: "$role",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    // Users by role - count from all three models
+    const usersByRole = [
+      { _id: "student", count: studentCount },
+      { _id: "organizer", count: organizerCount },
+      { _id: "admin", count: adminCount },
+    ];
 
     // Events by category
     const eventsByCategory = await Event.aggregate([
@@ -53,11 +57,30 @@ exports.getAdminStats = async (req, res, next) => {
       },
     ]);
 
-    // Recent activity
-    const recentUsers = await User.find()
+    // Recent activity - get from all models
+    const recentStudents = await User.find()
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(2)
       .select("name email role createdAt");
+
+    const recentOrganizers = await Organizer.find()
+      .sort({ createdAt: -1 })
+      .limit(2)
+      .select("name email role createdAt");
+
+    const recentAdmins = await Admin.find()
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .select("name email role createdAt");
+
+    // Combine and sort recent users
+    const recentUsers = [
+      ...recentStudents,
+      ...recentOrganizers,
+      ...recentAdmins,
+    ]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
 
     const recentEvents = await Event.find()
       .sort({ createdAt: -1 })
@@ -93,30 +116,61 @@ exports.getAdminStats = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const { role, search, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
 
-    const query = {};
-    if (role) query.role = role;
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { rollNumber: { $regex: search, $options: "i" } },
-      ];
+    let users = [];
+    let count = 0;
+
+    // Build search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { rollNumber: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    if (role) {
+      // Query specific role model
+      let Model;
+      if (role === "student") Model = User;
+      else if (role === "organizer") Model = Organizer;
+      else if (role === "admin") Model = Admin;
+
+      if (Model) {
+        users = await Model.find(searchQuery)
+          .select("-password")
+          .sort({ createdAt: -1 })
+          .limit(parseInt(limit))
+          .skip(skip);
+
+        count = await Model.countDocuments(searchQuery);
+      }
+    } else {
+      // Query all models and combine results
+      const [students, organizers, admins] = await Promise.all([
+        User.find(searchQuery).select("-password").sort({ createdAt: -1 }),
+        Organizer.find(searchQuery).select("-password").sort({ createdAt: -1 }),
+        Admin.find(searchQuery).select("-password").sort({ createdAt: -1 }),
+      ]);
+
+      // Combine and sort by creation date
+      const allUsers = [...students, ...organizers, ...admins].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+
+      count = allUsers.length;
+      users = allUsers.slice(skip, skip + parseInt(limit));
     }
-
-    const users = await User.find(query)
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const count = await User.countDocuments(query);
 
     res.status(200).json({
       success: true,
-      count,
+      count: users.length,
+      totalCount: count,
       totalPages: Math.ceil(count / limit),
-      currentPage: page,
+      currentPage: parseInt(page),
       data: users,
     });
   } catch (error) {
@@ -212,14 +266,14 @@ exports.suspendEvent = async (req, res, next) => {
     // Notify all registered users
     const registrations = await Registration.find({
       event: event._id,
-      status: "approved",
+      status: "registered",
     });
 
     const notifications = registrations.map((reg) => ({
-      user: reg.user,
+      recipient: reg.student,
       title: "Event Suspended",
       message: `The event "${event.title}" has been suspended. Reason: ${reason}`,
-      type: "alert",
+      type: "event_cancelled",
     }));
 
     await Notification.insertMany(notifications);
@@ -259,16 +313,35 @@ exports.sendAnnouncement = async (req, res, next) => {
   try {
     const { title, message, targetRole } = req.body;
 
-    const query = {};
-    if (targetRole && targetRole !== "all") {
-      query.role = targetRole;
+    let userIds = [];
+
+    // Fetch users based on targetRole from all three models
+    if (targetRole === "all" || !targetRole) {
+      // Get all users from all three models
+      const [students, organizers, admins] = await Promise.all([
+        User.find().select("_id"),
+        Organizer.find().select("_id"),
+        Admin.find().select("_id"),
+      ]);
+      userIds = [
+        ...students.map((u) => u._id),
+        ...organizers.map((u) => u._id),
+        ...admins.map((u) => u._id),
+      ];
+    } else if (targetRole === "student") {
+      const students = await User.find().select("_id");
+      userIds = students.map((u) => u._id);
+    } else if (targetRole === "organizer") {
+      const organizers = await Organizer.find().select("_id");
+      userIds = organizers.map((u) => u._id);
+    } else if (targetRole === "admin") {
+      const admins = await Admin.find().select("_id");
+      userIds = admins.map((u) => u._id);
     }
 
-    const users = await User.find(query).select("_id");
-    const userIds = users.map((u) => u._id);
-
+    // Create notifications for all users
     const notifications = userIds.map((userId) => ({
-      user: userId,
+      recipient: userId,
       title,
       message,
       type: "announcement",
@@ -279,6 +352,10 @@ exports.sendAnnouncement = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: `Announcement sent to ${userIds.length} users`,
+      data: {
+        totalRecipients: userIds.length,
+        targetRole: targetRole || "all",
+      },
     });
   } catch (error) {
     next(error);

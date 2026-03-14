@@ -54,6 +54,10 @@ const eventSchema = new mongoose.Schema({
     enum: ["upcoming", "ongoing", "completed", "cancelled"],
     default: "upcoming",
   },
+  registrationOpen: {
+    type: Boolean,
+    default: true,
+  },
   approvalStatus: {
     type: String,
     enum: ["pending", "approved", "rejected"],
@@ -93,13 +97,19 @@ const eventSchema = new mongoose.Schema({
 // Update status based on dates
 eventSchema.pre("save", function (next) {
   const now = new Date();
+
+  // Update event status
   if (this.endDate < now) {
     this.status = "completed";
+    this.registrationOpen = false;
   } else if (this.startDate <= now && this.endDate > now) {
     this.status = "ongoing";
+    this.registrationOpen = false; // Close registration when event starts
   } else if (this.startDate > now) {
     this.status = "upcoming";
+    // Keep registrationOpen as is (can be manually closed by organizer)
   }
+
   next();
 });
 

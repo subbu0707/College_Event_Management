@@ -1,8 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cron = require("node-cron");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
+const updateEventStatuses = require("./updateEventStatuses");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -52,4 +54,16 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Run event status update on server start
+  console.log("Running initial event status update...");
+  updateEventStatuses();
+
+  // Schedule event status update to run every 5 minutes
+  cron.schedule("*/5 * * * *", () => {
+    console.log("Running scheduled event status update...");
+    updateEventStatuses();
+  });
+
+  console.log("Event status update scheduler started (runs every 5 minutes)");
 });

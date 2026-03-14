@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import eventService from "../services/eventService";
 import registrationService from "../services/registrationService";
 import EventCard from "../components/EventCard";
 
 const Events = () => {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,8 +28,11 @@ const Events = () => {
 
   useEffect(() => {
     fetchEvents();
-    fetchRegisteredEvents();
-  }, [currentPage, category]);
+    // Only fetch registered events for students
+    if (user?.role === "student") {
+      fetchRegisteredEvents();
+    }
+  }, [currentPage, category, user]);
 
   const fetchEvents = async () => {
     try {
@@ -63,11 +68,19 @@ const Events = () => {
   };
 
   const fetchRegisteredEvents = async () => {
+    // Only fetch for students
+    if (user?.role !== "student") {
+      return;
+    }
+    
     try {
       const response = await registrationService.getMyRegistrations({
         limit: 1000,
       });
-      const registeredIds = response.registrations.map((reg) => reg.event._id);
+      // Only include active registrations (status === "registered")
+      const registeredIds = response.registrations
+        .filter((reg) => reg.status === "registered")
+        .map((reg) => reg.event._id);
       setRegisteredEvents(registeredIds);
     } catch (err) {
       console.error("Failed to fetch registered events:", err);
@@ -88,8 +101,12 @@ const Events = () => {
     try {
       await registrationService.registerForEvent(eventId);
       alert("Successfully registered for the event!");
-      setRegisteredEvents([...registeredEvents, eventId]);
-      fetchEvents();
+      
+      // Refresh registered events from server to ensure accuracy
+      await fetchRegisteredEvents();
+      
+      // Refresh events to get updated counts
+      await fetchEvents();
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
     }
@@ -105,17 +122,24 @@ const Events = () => {
         limit: 1000,
       });
       const reg = registration.registrations.find(
-        (r) => r.event._id === eventId,
+        (r) => r.event._id === eventId && r.status === "registered",
       );
 
       if (reg) {
         await registrationService.cancelRegistration(reg._id);
         alert("Registration cancelled successfully");
-        setRegisteredEvents(registeredEvents.filter((id) => id !== eventId));
-        fetchEvents();
+        
+        // Refresh registered events from server to ensure accuracy
+        await fetchRegisteredEvents();
+        
+        // Refresh events to get updated counts
+        await fetchEvents();
+      } else {
+        alert("Registration not found or already cancelled");
       }
     } catch (err) {
       alert("Failed to cancel registration");
+      console.error(err);
     }
   };
 
@@ -202,6 +226,7 @@ const Events = () => {
                 onRegister={handleRegister}
                 onCancel={handleCancelRegistration}
                 isRegistered={registeredEvents.includes(event._id)}
+                userRole={user?.role}
               />
             ))}
           </div>

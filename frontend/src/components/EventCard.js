@@ -6,6 +6,7 @@ const EventCard = ({
   onRegister,
   isRegistered,
   onCancel,
+  userRole,
 }) => {
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -22,6 +23,25 @@ const EventCard = ({
       <span className={`event-badge ${event.status}`}>
         {event.status.toUpperCase()}
       </span>
+
+      {/* Show registration closed status */}
+      {(!event.registrationOpen || event.status !== "upcoming") && (
+        <div
+          style={{
+            marginTop: "0.5rem",
+            padding: "0.3rem 0.6rem",
+            backgroundColor: "#fee",
+            border: "1px solid #d32f2f",
+            borderRadius: "4px",
+            color: "#d32f2f",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          🔒 Registrations Closed
+        </div>
+      )}
 
       <h3 className="card-title">{event.title}</h3>
 
@@ -62,24 +82,31 @@ const EventCard = ({
           View Details
         </button>
 
-        {isRegistered ? (
-          <button
-            className="btn btn-danger btn-small"
-            onClick={() => onCancel(event._id)}
-          >
-            Cancel Registration
-          </button>
-        ) : (
-          <button
-            className="btn btn-secondary btn-small"
-            onClick={() => onRegister(event._id)}
-            disabled={event.registeredCount >= event.capacity}
-          >
-            {event.registeredCount >= event.capacity
-              ? "Event Full"
-              : "Register"}
-          </button>
-        )}
+        {/* Only show register/cancel buttons for students and when registration is open */}
+        {userRole === "student" &&
+          event.registrationOpen &&
+          event.status === "upcoming" && (
+            <>
+              {isRegistered ? (
+                <button
+                  className="btn btn-danger btn-small"
+                  onClick={() => onCancel(event._id)}
+                >
+                  Cancel Registration
+                </button>
+              ) : (
+                <button
+                  className="btn btn-secondary btn-small"
+                  onClick={() => onRegister(event._id)}
+                  disabled={event.registeredCount >= event.capacity}
+                >
+                  {event.registeredCount >= event.capacity
+                    ? "Event Full"
+                    : "Register"}
+                </button>
+              )}
+            </>
+          )}
       </div>
     </div>
   );
