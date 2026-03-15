@@ -4,7 +4,10 @@ require("dotenv").config();
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(
+    process.env.MONGODB_URI ||
+      "mongodb://localhost:27017/college_event_management",
+  )
   .then(() => console.log("MongoDB connected for event status update"))
   .catch((err) => console.error("MongoDB connection error:", err));
 

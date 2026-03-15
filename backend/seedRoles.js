@@ -9,7 +9,10 @@ dotenv.config();
 
 const seedDatabase = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(
+      process.env.MONGODB_URI ||
+        "mongodb://localhost:27017/college_event_management",
+    );
     console.log("MongoDB Connected for seeding...");
 
     // Clear existing data
