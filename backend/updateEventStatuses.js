@@ -2,17 +2,20 @@ const mongoose = require("mongoose");
 const Event = require("./models/Event");
 require("dotenv").config();
 
-// Connect to MongoDB
-mongoose
-  .connect(
-    process.env.MONGODB_URI ||
-      "mongodb://localhost:27017/college_event_management",
-  )
-  .then(() => console.log("MongoDB connected for event status update"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
 async function updateEventStatuses() {
   try {
+    if (require.main === module && mongoose.connection.readyState !== 1) {
+      await mongoose.connect(
+        process.env.MONGODB_URI ||
+          "mongodb://localhost:27017/college_event_management",
+        {
+          family: 4,
+          serverSelectionTimeoutMS: 30000,
+        },
+      );
+      console.log("MongoDB connected for event status update");
+    }
+
     const now = new Date();
     let updated = 0;
 

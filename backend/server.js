@@ -16,9 +16,6 @@ const organizerRoutes = require("./routes/organizerRoutes");
 
 const app = express();
 
-// Connect to database
-connectDB();
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,18 +49,29 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const startServer = async () => {
+  try {
+    await connectDB();
 
-  // Run event status update on server start
-  console.log("Running initial event status update...");
-  updateEventStatuses();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
 
-  // Schedule event status update to run every 5 minutes
-  cron.schedule("*/5 * * * *", () => {
-    console.log("Running scheduled event status update...");
-    updateEventStatuses();
-  });
+      console.log("Running initial event status update...");
+      updateEventStatuses();
 
-  console.log("Event status update scheduler started (runs every 5 minutes)");
-});
+      cron.schedule("*/5 * * * *", () => {
+        console.log("Running scheduled event status update...");
+        updateEventStatuses();
+      });
+
+      console.log(
+        "Event status update scheduler started (runs every 5 minutes)",
+      );
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
