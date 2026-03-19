@@ -43,7 +43,7 @@ const Events = () => {
           limit: 9,
         });
       } else {
-        response = await eventService.getEvents({
+        response = await eventService.getAllEvents({
           page: currentPage,
           limit: 9,
         });
