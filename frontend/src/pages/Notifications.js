@@ -9,9 +9,27 @@ const Notifications = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const fetchNotifications = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await notificationService.getNotifications({
+        page: currentPage,
+        limit: 10,
+      });
+      setNotifications(response.notifications);
+      setTotalPages(response.totalPages);
+      setUnreadCount(response.unreadCount);
+    } catch (err) {
+      setError("Failed to fetch notifications");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage]);
+
   useEffect(() => {
     fetchNotifications();
-  }, [currentPage]);
+  }, [fetchNotifications]);
 
   const fetchNotifications = async () => {
     try {

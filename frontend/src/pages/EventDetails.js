@@ -14,10 +14,35 @@ const EventDetails = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
 
+  const fetchEventDetails = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const eventData = await eventService.getEventById(id);
+      setEvent(eventData);
+    } catch (err) {
+      setError("Failed to load event details");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const checkRegistration = React.useCallback(async () => {
+    try {
+      const response = await registrationService.checkRegistration(id);
+      if (response.isRegistered) {
+        setIsRegistered(true);
+        setRegistrationId(response.registration._id);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchEventDetails();
     checkRegistration();
-  }, [id]);
+  }, [fetchEventDetails, checkRegistration]);
 
   const fetchEventDetails = async () => {
     try {

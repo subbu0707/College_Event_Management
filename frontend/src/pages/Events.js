@@ -26,13 +26,55 @@ const Events = () => {
     "Workshop",
   ];
 
+  const fetchEvents = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      let response;
+      if (searchTerm) {
+        response = await eventService.searchEvents(searchTerm, {
+          page: currentPage,
+          limit: 9,
+        });
+      } else if (category) {
+        response = await eventService.getEventsByCategory(category, {
+          page: currentPage,
+          limit: 9,
+        });
+      } else {
+        response = await eventService.getEvents({
+          page: currentPage,
+          limit: 9,
+        });
+      }
+
+      setEvents(response.events || response.data || []);
+      setTotalPages(response.totalPages || 1);
+    } catch (err) {
+      setError("Error fetching events");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, category, currentPage]);
+
+  const fetchRegisteredEvents = React.useCallback(async () => {
+    try {
+      const response = await registrationService.getMyRegistrations();
+      setRegisteredEvents(response.registrations || []);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEvents();
     // Only fetch registered events for students
     if (user?.role === "student") {
       fetchRegisteredEvents();
     }
-  }, [currentPage, category, user]);
+  }, [fetchEvents, fetchRegisteredEvents, user?.role]);
 
   const fetchEvents = async () => {
     try {
@@ -72,7 +114,7 @@ const Events = () => {
     if (user?.role !== "student") {
       return;
     }
-    
+
     try {
       const response = await registrationService.getMyRegistrations({
         limit: 1000,
@@ -101,10 +143,10 @@ const Events = () => {
     try {
       await registrationService.registerForEvent(eventId);
       alert("Successfully registered for the event!");
-      
+
       // Refresh registered events from server to ensure accuracy
       await fetchRegisteredEvents();
-      
+
       // Refresh events to get updated counts
       await fetchEvents();
     } catch (err) {
@@ -128,10 +170,10 @@ const Events = () => {
       if (reg) {
         await registrationService.cancelRegistration(reg._id);
         alert("Registration cancelled successfully");
-        
+
         // Refresh registered events from server to ensure accuracy
         await fetchRegisteredEvents();
-        
+
         // Refresh events to get updated counts
         await fetchEvents();
       } else {

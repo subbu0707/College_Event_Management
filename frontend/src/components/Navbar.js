@@ -6,7 +6,7 @@ import notificationService from "../services/notificationService";
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -68,9 +68,18 @@ const Navbar = () => {
               </button>
             </li>
             <li>
-              <a onClick={handleLogout} style={{ cursor: "pointer" }}>
+              <button
+                onClick={handleLogout}
+                style={{
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  color: "inherit",
+                  textDecoration: "underline",
+                }}
+              >
                 Logout
-              </a>
+              </button>
             </li>
           </>
         ) : (

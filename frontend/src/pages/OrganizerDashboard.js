@@ -5,8 +5,6 @@ import eventService from "../services/eventService";
 import organizerService from "../services/organizerService";
 
 const OrganizerDashboard = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     myEvents: 0,
     pendingApproval: 0,

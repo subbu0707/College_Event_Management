@@ -8,9 +8,26 @@ const MyRegistrations = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const fetchRegistrations = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await registrationService.getMyRegistrations({
+        page: currentPage,
+        limit: 10,
+      });
+      setRegistrations(response.registrations);
+      setTotalPages(response.totalPages);
+    } catch (err) {
+      setError("Failed to fetch registrations");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage]);
+
   useEffect(() => {
     fetchRegistrations();
-  }, [currentPage]);
+  }, [fetchRegistrations]);
 
   const fetchRegistrations = async () => {
     try {

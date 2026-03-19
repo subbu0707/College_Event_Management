@@ -5,7 +5,6 @@ import eventService from "../services/eventService";
 import adminService from "../services/adminService";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -175,6 +174,11 @@ const AdminDashboard = () => {
     if (activeTab === "reports") fetchReports();
     if (activeTab === "audit") fetchAuditLogs();
   }, [activeTab, searchTerm, roleFilter]);
+
+  const memoizedFetchUsers = React.useCallback(fetchUsers, [
+    roleFilter,
+    searchTerm,
+  ]);
 
   if (loading) {
     return (
