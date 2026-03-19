@@ -49,7 +49,28 @@ const Events = () => {
         });
       }
 
-      setEvents(response.events || response.data || []);
+      let eventsList = response.events || response.data || [];
+
+      // For organizers/admins, also include their own events (including pending approval)
+      if (
+        !searchTerm &&
+        !category &&
+        (user?.role === "organizer" || user?.role === "admin")
+      ) {
+        const myEventsResponse = await eventService.getMyEvents();
+        const myEvents = myEventsResponse.data || [];
+
+        const mergedEventsMap = new Map();
+        [...myEvents, ...eventsList].forEach((event) => {
+          mergedEventsMap.set(event._id, event);
+        });
+
+        eventsList = Array.from(mergedEventsMap.values()).sort(
+          (a, b) => new Date(a.startDate) - new Date(b.startDate),
+        );
+      }
+
+      setEvents(eventsList);
       setTotalPages(response.totalPages || 1);
     } catch (err) {
       setError("Error fetching events");
@@ -57,12 +78,17 @@ const Events = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, category, currentPage]);
+  }, [searchTerm, category, currentPage, user?.role]);
 
   const fetchRegisteredEvents = React.useCallback(async () => {
     try {
       const response = await registrationService.getMyRegistrations();
-      setRegisteredEvents(response.registrations || []);
+      const registeredEventIds = (response.registrations || [])
+        .filter((registration) => registration.status === "registered")
+        .map((registration) => registration.event?._id)
+        .filter(Boolean);
+
+      setRegisteredEvents(registeredEventIds);
     } catch (error) {
       console.error(error);
     }
