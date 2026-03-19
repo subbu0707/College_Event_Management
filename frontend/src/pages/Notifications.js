@@ -31,24 +31,6 @@ const Notifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await notificationService.getNotifications({
-        page: currentPage,
-        limit: 10,
-      });
-      setNotifications(response.notifications);
-      setTotalPages(response.totalPages);
-      setUnreadCount(response.unreadCount);
-    } catch (err) {
-      setError("Failed to fetch notifications");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleMarkAsRead = async (notificationId) => {
     try {
       await notificationService.markAsRead(notificationId);

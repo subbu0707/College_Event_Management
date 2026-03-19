@@ -76,29 +76,6 @@ const Events = () => {
     }
   }, [fetchEvents, fetchRegisteredEvents, user?.role]);
 
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      let response;
-      if (searchTerm) {
-        response = await eventService.searchEvents(searchTerm, {
-          page: currentPage,
-          limit: 9,
-        });
-      } else if (category) {
-        response = await eventService.getEventsByCategory(category, {
-          page: currentPage,
-          limit: 9,
-        });
-      } else {
-        response = await eventService.getAllEvents({
-          page: currentPage,
-          limit: 9,
-        });
-      }
-
       setEvents(response.events);
       setTotalPages(response.totalPages);
     } catch (err) {

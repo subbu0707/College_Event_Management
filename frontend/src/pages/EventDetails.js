@@ -44,31 +44,6 @@ const EventDetails = () => {
     checkRegistration();
   }, [fetchEventDetails, checkRegistration]);
 
-  const fetchEventDetails = async () => {
-    try {
-      setLoading(true);
-      const eventData = await eventService.getEventById(id);
-      setEvent(eventData);
-    } catch (err) {
-      setError("Failed to load event details");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkRegistration = async () => {
-    try {
-      const response = await registrationService.checkRegistration(id);
-      if (response.isRegistered) {
-        setIsRegistered(true);
-        setRegistrationId(response.registration._id);
-      }
-    } catch (err) {
-      console.error("Error checking registration:", err);
-    }
-  };
-
   const handleRegister = async () => {
     try {
       await registrationService.registerForEvent(id);

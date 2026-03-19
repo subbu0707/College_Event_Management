@@ -29,23 +29,6 @@ const MyRegistrations = () => {
     fetchRegistrations();
   }, [fetchRegistrations]);
 
-  const fetchRegistrations = async () => {
-    try {
-      setLoading(true);
-      const response = await registrationService.getMyRegistrations({
-        page: currentPage,
-        limit: 10,
-      });
-      setRegistrations(response.registrations);
-      setTotalPages(response.totalPages);
-    } catch (err) {
-      setError("Failed to fetch registrations");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCancelRegistration = async (registrationId) => {
     if (!window.confirm("Are you sure you want to cancel this registration?")) {
       return;
