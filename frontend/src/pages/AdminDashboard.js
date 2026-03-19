@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import eventService from "../services/eventService";
 import adminService from "../services/adminService";
@@ -52,7 +51,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = React.useCallback(async () => {
     try {
       const params = {};
       if (roleFilter) params.role = roleFilter;
@@ -63,7 +62,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching users:", error);
     }
-  };
+  }, [roleFilter, searchTerm]);
 
   const fetchReports = async () => {
     try {
@@ -173,12 +172,7 @@ const AdminDashboard = () => {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "reports") fetchReports();
     if (activeTab === "audit") fetchAuditLogs();
-  }, [activeTab, searchTerm, roleFilter]);
-
-  const memoizedFetchUsers = React.useCallback(fetchUsers, [
-    roleFilter,
-    searchTerm,
-  ]);
+  }, [activeTab, fetchUsers, searchTerm, roleFilter]);
 
   if (loading) {
     return (

@@ -76,36 +76,6 @@ const Events = () => {
     }
   }, [fetchEvents, fetchRegisteredEvents, user?.role]);
 
-      setEvents(response.events);
-      setTotalPages(response.totalPages);
-    } catch (err) {
-      setError("Failed to fetch events");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRegisteredEvents = async () => {
-    // Only fetch for students
-    if (user?.role !== "student") {
-      return;
-    }
-
-    try {
-      const response = await registrationService.getMyRegistrations({
-        limit: 1000,
-      });
-      // Only include active registrations (status === "registered")
-      const registeredIds = response.registrations
-        .filter((reg) => reg.status === "registered")
-        .map((reg) => reg.event._id);
-      setRegisteredEvents(registeredIds);
-    } catch (err) {
-      console.error("Failed to fetch registered events:", err);
-    }
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1);
