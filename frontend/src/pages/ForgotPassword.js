@@ -10,6 +10,14 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [resetUrl, setResetUrl] = useState("");
 
+  const normalizedResetUrl =
+    resetUrl &&
+    typeof window !== "undefined" &&
+    window.location.origin &&
+    resetUrl.startsWith("http://localhost:3000")
+      ? resetUrl.replace("http://localhost:3000", window.location.origin)
+      : resetUrl;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -51,9 +59,10 @@ const ForgotPassword = () => {
 
         {error && <div className="error-message">{error}</div>}
         {message && <div className="success-message">{message}</div>}
-        {resetUrl && (
+        {normalizedResetUrl && (
           <div className="success-message">
-            Reset link for local testing: <a href={resetUrl}>{resetUrl}</a>
+            Reset link for local testing:{" "}
+            <a href={normalizedResetUrl}>{normalizedResetUrl}</a>
           </div>
         )}
 

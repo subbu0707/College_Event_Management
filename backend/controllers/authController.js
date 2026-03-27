@@ -50,6 +50,30 @@ const getAllRoleModels = () => [
   { role: "admin", model: Admin },
 ];
 
+const getFrontendBaseUrl = (req) => {
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL.replace(/\/$/, "");
+  }
+
+  const requestOrigin = req.get("origin");
+  if (requestOrigin) {
+    return requestOrigin.replace(/\/$/, "");
+  }
+
+  const forwardedProto = req.get("x-forwarded-proto");
+  const forwardedHost = req.get("x-forwarded-host");
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`.replace(/\/$/, "");
+  }
+
+  const host = req.get("host");
+  if (host) {
+    return `${req.protocol}://${host}`.replace(/\/$/, "");
+  }
+
+  return "http://localhost:3000";
+};
+
 // @desc    Register user (student/organizer/admin)
 // @route   POST /api/auth/register
 exports.register = async (req, res, next) => {
@@ -280,9 +304,7 @@ exports.forgotPassword = async (req, res, next) => {
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
 
-    const frontendBase = (
-      process.env.FRONTEND_URL || "http://localhost:3000"
-    ).replace(/\/$/, "");
+    const frontendBase = getFrontendBaseUrl(req);
     const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
 
     const transporter = createMailTransporter();
