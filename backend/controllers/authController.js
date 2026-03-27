@@ -391,18 +391,11 @@ exports.resetPassword = async (req, res, next) => {
       });
     }
 
-    // Update password and clear reset token fields
-    await selectedModel.findByIdAndUpdate(
-      user._id,
-      {
-        password: newPassword,
-        $unset: {
-          resetPasswordToken: 1,
-          resetPasswordExpire: 1,
-        },
-      },
-      { new: true, runValidators: true },
-    );
+    // Update password and clear reset token fields using save() to trigger pre-save hooks
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
 
     res.status(200).json({
       success: true,

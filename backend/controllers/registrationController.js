@@ -8,7 +8,7 @@ const Notification = require("../models/Notification");
 exports.registerForEvent = async (req, res, next) => {
   try {
     const { eventId } = req.body;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     // Check if event exists
     const event = await Event.findById(eventId);
@@ -129,7 +129,7 @@ exports.registerForEvent = async (req, res, next) => {
 exports.getMyRegistrations = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     const skip = (page - 1) * limit;
 
@@ -162,7 +162,7 @@ exports.getMyRegistrations = async (req, res, next) => {
 exports.cancelRegistration = async (req, res, next) => {
   try {
     const { registrationId } = req.params;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     const registration = await Registration.findById(registrationId);
     if (!registration) {
@@ -245,7 +245,7 @@ exports.cancelRegistration = async (req, res, next) => {
 exports.checkRegistration = async (req, res, next) => {
   try {
     const { eventId } = req.params;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     const registration = await Registration.findOne({
       student: studentId,
@@ -267,7 +267,7 @@ exports.checkRegistration = async (req, res, next) => {
 // @route   GET /api/registrations/student-stats
 exports.getStudentStats = async (req, res, next) => {
   try {
-    const studentId = req.user.id;
+    const studentId = req.user._id;
     const now = new Date();
 
     // Get user with statistics
@@ -334,7 +334,7 @@ exports.submitFeedback = async (req, res, next) => {
   try {
     const { registrationId } = req.params;
     const { rating, feedback } = req.body;
-    const studentId = req.user.id;
+    const studentId = req.user._id;
 
     const registration = await Registration.findById(registrationId);
     if (!registration) {
