@@ -171,9 +171,11 @@ exports.login = async (req, res, next) => {
     const Model = getModelByRole(role);
 
     // Check for user
-    const user = await Model.findOne({ email })
-      .select("+password")
-      .populate("registeredEvents", "title status");
+    let userQuery = Model.findOne({ email }).select("+password");
+    if (role === "student") {
+      userQuery = userQuery.populate("registeredEvents", "title status");
+    }
+    const user = await userQuery;
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -210,10 +212,11 @@ exports.login = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const Model = getModelByRole(req.user.role);
-    const user = await Model.findById(req.user._id).populate(
-      "registeredEvents",
-      "title status",
-    );
+    let userQuery = Model.findById(req.user._id);
+    if (req.user.role === "student") {
+      userQuery = userQuery.populate("registeredEvents", "title status");
+    }
+    const user = await userQuery;
 
     res.status(200).json({
       success: true,
