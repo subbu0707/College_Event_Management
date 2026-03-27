@@ -47,6 +47,12 @@ const organizerSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, "Bio cannot exceed 500 characters"],
   },
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpire: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

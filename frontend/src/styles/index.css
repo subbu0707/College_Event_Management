@@ -529,6 +529,17 @@ a {
   cursor: pointer;
 }
 
+.auth-inline-link {
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.auth-inline-link a {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* Profile Page */
 .profile-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

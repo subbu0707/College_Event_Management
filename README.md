@@ -133,6 +133,11 @@ JWT_EXPIRE=7d
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_email_app_password
+EMAIL_FROM=Event Management <your_email@example.com>
 ```
 
 4. Start MongoDB service:
@@ -195,6 +200,8 @@ The frontend will start on http://localhost:3000
 - `GET /api/auth/me` - Get current user (Protected)
 - `PUT /api/auth/update` - Update profile (Protected)
 - `PUT /api/auth/change-password` - Change password (Protected)
+- `POST /api/auth/forgot-password` - Request password reset link
+- `PUT /api/auth/reset-password/:token` - Reset password using token
 
 ### Events
 

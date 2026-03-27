@@ -6,6 +6,8 @@ const {
   getMe,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { auth } = require("../middleware/auth");
 
@@ -36,6 +38,31 @@ router.post(
     body("password", "Password is required").notEmpty(),
   ],
   login,
+);
+
+// Forgot password route
+router.post(
+  "/forgot-password",
+  [
+    body("email", "Please include a valid email").isEmail(),
+    body("role", "Role must be student, organizer, or admin").isIn([
+      "student",
+      "organizer",
+      "admin",
+    ]),
+  ],
+  forgotPassword,
+);
+
+// Reset password route
+router.put(
+  "/reset-password/:token",
+  [
+    body("newPassword", "New password must be at least 6 characters").isLength({
+      min: 6,
+    }),
+  ],
+  resetPassword,
 );
 
 // Get current user (protected)

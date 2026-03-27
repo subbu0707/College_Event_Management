@@ -44,6 +44,18 @@ const authService = {
     });
     return response.data;
   },
+
+  forgotPassword: async (email, role) => {
+    const response = await api.post("/auth/forgot-password", { email, role });
+    return response.data;
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const response = await api.put(`/auth/reset-password/${token}`, {
+      newPassword,
+    });
+    return response.data;
+  },
 };
 
 export default authService;

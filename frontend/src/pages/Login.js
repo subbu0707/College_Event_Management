@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
@@ -104,6 +104,9 @@ const Login = () => {
               required
               placeholder="Enter your password"
             />
+            <div className="auth-inline-link">
+              <Link to="/forgot-password">Forgot password?</Link>
+            </div>
           </div>
 
           <button
@@ -117,7 +120,7 @@ const Login = () => {
         </form>
 
         <div className="auth-link">
-          Don't have an account? <a href="/register">Register here</a>
+          Don't have an account? <Link to="/register">Register here</Link>
         </div>
       </div>
     </div>

@@ -168,6 +168,59 @@ Change user password.
 
 ---
 
+### Forgot Password
+
+**POST** `/auth/forgot-password`
+
+Request a password reset link.
+
+**Request Body:**
+
+```json
+{
+  "email": "john@college.edu",
+  "role": "student"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "If an account exists with that email, a password reset link has been sent."
+}
+```
+
+If SMTP is not configured, local development response also includes a `resetUrl` value.
+
+---
+
+### Reset Password
+
+**PUT** `/auth/reset-password/:token`
+
+Reset password using token from forgot-password flow.
+
+**Request Body:**
+
+```json
+{
+  "newPassword": "newpassword456"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Password reset successful. You can now log in."
+}
+```
+
+---
+
 ## 🎊 Event Endpoints
 
 ### Get All Events
