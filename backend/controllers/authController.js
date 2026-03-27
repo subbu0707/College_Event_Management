@@ -171,7 +171,9 @@ exports.login = async (req, res, next) => {
     const Model = getModelByRole(role);
 
     // Check for user
-    const user = await Model.findOne({ email }).select("+password");
+    const user = await Model.findOne({ email })
+      .select("+password")
+      .populate("registeredEvents", "title status");
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -208,7 +210,10 @@ exports.login = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const Model = getModelByRole(req.user.role);
-    const user = await Model.findById(req.user._id);
+    const user = await Model.findById(req.user._id).populate(
+      "registeredEvents",
+      "title status",
+    );
 
     res.status(200).json({
       success: true,
@@ -386,10 +391,18 @@ exports.resetPassword = async (req, res, next) => {
       });
     }
 
-    user.password = newPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
+    // Update password and clear reset token fields
+    await selectedModel.findByIdAndUpdate(
+      user._id,
+      {
+        password: newPassword,
+        $unset: {
+          resetPasswordToken: 1,
+          resetPasswordExpire: 1,
+        },
+      },
+      { new: true, runValidators: true },
+    );
 
     res.status(200).json({
       success: true,
