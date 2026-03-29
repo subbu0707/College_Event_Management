@@ -103,13 +103,11 @@ exports.deleteNotification = async (req, res, next) => {
     }
 
     // Check if user is recipient
-    if (notification.recipient.toString() !== userId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to delete this notification",
-        });
+    if (notification.recipient.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this notification",
+      });
     }
 
     await Notification.findByIdAndDelete(notificationId);

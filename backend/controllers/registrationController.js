@@ -172,7 +172,7 @@ exports.cancelRegistration = async (req, res, next) => {
     }
 
     // Check if user is the one who registered
-    if (registration.student.toString() !== studentId) {
+    if (registration.student.toString() !== studentId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to cancel this registration",
@@ -344,7 +344,7 @@ exports.submitFeedback = async (req, res, next) => {
     }
 
     // Check if user is the one who registered
-    if (registration.student.toString() !== studentId) {
+    if (registration.student.toString() !== studentId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to submit feedback for this registration",
