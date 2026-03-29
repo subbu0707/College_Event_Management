@@ -85,6 +85,11 @@ const OrganizerDashboard = () => {
     }));
   };
 
+  const toISOFromLocalDateTime = (value) => {
+    if (!value) return value;
+    return new Date(value).toISOString();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -100,6 +105,8 @@ const OrganizerDashboard = () => {
 
       const eventData = {
         ...formData,
+        startDate: toISOFromLocalDateTime(formData.startDate),
+        endDate: toISOFromLocalDateTime(formData.endDate),
         tags: tagsArray,
         capacity: parseInt(formData.capacity),
       };
@@ -225,7 +232,14 @@ const OrganizerDashboard = () => {
     setSubmitting(true);
 
     try {
-      await organizerService.updateEvent(selectedEvent._id, editFormData);
+      const editPayload = {
+        ...editFormData,
+        startDate: toISOFromLocalDateTime(editFormData.startDate),
+        endDate: toISOFromLocalDateTime(editFormData.endDate),
+        venue: editFormData.venue?.trim(),
+      };
+
+      await organizerService.updateEvent(selectedEvent._id, editPayload);
       setSuccess("Event updated successfully!");
 
       // Refresh dashboard data
