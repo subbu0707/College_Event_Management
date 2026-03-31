@@ -25,6 +25,7 @@ const Events = () => {
     "Social",
     "Workshop",
   ];
+  const EVENTS_PER_PAGE = 9;
 
   const sortEventsByStatus = (eventsToSort = []) => {
     const statusPriority = {
@@ -54,24 +55,45 @@ const Events = () => {
       setError("");
 
       let response;
+      let eventsList = [];
       if (searchTerm) {
         response = await eventService.searchEvents(searchTerm, {
           page: currentPage,
-          limit: 9,
+          limit: EVENTS_PER_PAGE,
         });
+        eventsList = response.events || response.data || [];
       } else if (category) {
         response = await eventService.getEventsByCategory(category, {
           page: currentPage,
-          limit: 9,
+          limit: EVENTS_PER_PAGE,
         });
+        eventsList = response.events || response.data || [];
       } else {
         response = await eventService.getAllEvents({
-          page: currentPage,
-          limit: 9,
+          page: 1,
+          limit: EVENTS_PER_PAGE,
         });
-      }
 
-      let eventsList = response.events || response.data || [];
+        const serverTotalPages = response.totalPages || 1;
+        const allEvents = [...(response.events || response.data || [])];
+
+        if (serverTotalPages > 1) {
+          const remainingPageResponses = await Promise.all(
+            Array.from({ length: serverTotalPages - 1 }, (_, index) =>
+              eventService.getAllEvents({
+                page: index + 2,
+                limit: EVENTS_PER_PAGE,
+              }),
+            ),
+          );
+
+          remainingPageResponses.forEach((pageResponse) => {
+            allEvents.push(...(pageResponse.events || pageResponse.data || []));
+          });
+        }
+
+        eventsList = allEvents;
+      }
 
       // For organizers/admins, also include their own events (including pending approval)
       if (
@@ -90,8 +112,19 @@ const Events = () => {
         eventsList = Array.from(mergedEventsMap.values());
       }
 
-      setEvents(sortEventsByStatus(eventsList));
-      setTotalPages(response.totalPages || 1);
+      if (!searchTerm && !category) {
+        const globallySortedEvents = sortEventsByStatus(eventsList);
+        const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
+        const endIndex = startIndex + EVENTS_PER_PAGE;
+
+        setEvents(globallySortedEvents.slice(startIndex, endIndex));
+        setTotalPages(
+          Math.max(1, Math.ceil(globallySortedEvents.length / EVENTS_PER_PAGE)),
+        );
+      } else {
+        setEvents(sortEventsByStatus(eventsList));
+        setTotalPages(response.totalPages || 1);
+      }
     } catch (err) {
       setError("Error fetching events");
       console.error(err);
