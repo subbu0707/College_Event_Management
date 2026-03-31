@@ -26,6 +26,28 @@ const Events = () => {
     "Workshop",
   ];
 
+  const sortEventsByStatus = (eventsToSort = []) => {
+    const statusPriority = {
+      upcoming: 0,
+      ongoing: 1,
+      completed: 2,
+    };
+
+    return [...eventsToSort].sort((a, b) => {
+      const aStatus = (a.status || "").toLowerCase();
+      const bStatus = (b.status || "").toLowerCase();
+
+      const aPriority = statusPriority[aStatus] ?? 3;
+      const bPriority = statusPriority[bStatus] ?? 3;
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      return new Date(a.startDate) - new Date(b.startDate);
+    });
+  };
+
   const fetchEvents = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -65,12 +87,10 @@ const Events = () => {
           mergedEventsMap.set(event._id, event);
         });
 
-        eventsList = Array.from(mergedEventsMap.values()).sort(
-          (a, b) => new Date(a.startDate) - new Date(b.startDate),
-        );
+        eventsList = Array.from(mergedEventsMap.values());
       }
 
-      setEvents(eventsList);
+      setEvents(sortEventsByStatus(eventsList));
       setTotalPages(response.totalPages || 1);
     } catch (err) {
       setError("Error fetching events");
