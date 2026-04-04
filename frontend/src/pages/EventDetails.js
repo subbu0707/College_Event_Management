@@ -70,12 +70,8 @@ const EventDetails = () => {
         await registrationService.cancelRegistration(registrationId);
         alert("Registration cancelled successfully");
 
-        // Reset registration state immediately
-        setIsRegistered(false);
-        setRegistrationId(null);
-
-        // Refresh event details to get updated count
-        await fetchEventDetails();
+        // Navigate to My Registrations page immediately
+        navigate("/my-registrations");
       }
     } catch (err) {
       alert("Failed to cancel registration");
