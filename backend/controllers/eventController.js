@@ -1,6 +1,7 @@
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 const Notification = require("../models/Notification");
 
 // Helper function to update event status based on dates
@@ -246,6 +247,19 @@ exports.createEvent = async (req, res, next) => {
       type: "event_update",
       event: event._id,
     });
+
+    const adminUsers = await Admin.find().select("_id");
+    await Promise.all(
+      adminUsers.map((admin) =>
+        Notification.create({
+          recipient: admin._id,
+          title: "New Event Update",
+          message: `New event update: "${event.title}" has been created by an organizer and is pending approval.`,
+          type: "event_update",
+          event: event._id,
+        }),
+      ),
+    );
 
     res.status(201).json({
       success: true,

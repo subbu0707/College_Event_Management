@@ -5,6 +5,7 @@ const Profile = () => {
   const { user, updateProfile } = useAuth();
   const isStudent = user?.role === "student";
   const showSemester = isStudent;
+  const showBranch = user?.role !== "admin";
   const idLabel = user?.role === "admin" ? "Admin ID" : "Organizer ID";
   const showRegisteredEvents = user?.role === "student";
   const [isEditMode, setIsEditMode] = useState(false);
@@ -124,9 +125,11 @@ const Profile = () => {
             <p>{user.email}</p>
           </div>
           <div className="profile-meta-row">
-            <span className="profile-meta-pill">
-              {user.branch || "Branch not set"}
-            </span>
+            {showBranch && (
+              <span className="profile-meta-pill">
+                {user.branch || "Branch not set"}
+              </span>
+            )}
             {showSemester && (
               <span className="profile-meta-pill">
                 Semester {user.semester || "N/A"}
@@ -173,10 +176,12 @@ const Profile = () => {
                 <p>{user.phone || "Not provided"}</p>
               </div>
 
-              <div>
-                <strong>Branch:</strong>
-                <p>{user.branch}</p>
-              </div>
+              {showBranch && (
+                <div>
+                  <strong>Branch:</strong>
+                  <p>{user.branch}</p>
+                </div>
+              )}
 
               {showSemester && (
                 <div>
@@ -309,15 +314,17 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Branch (Read-only)</label>
-                <input
-                  type="text"
-                  value={user.branch}
-                  readOnly
-                  className="profile-readonly-field"
-                />
-              </div>
+              {showBranch && (
+                <div className="form-group">
+                  <label>Branch (Read-only)</label>
+                  <input
+                    type="text"
+                    value={user.branch}
+                    readOnly
+                    className="profile-readonly-field"
+                  />
+                </div>
+              )}
 
               {showSemester && (
                 <div className="form-group">

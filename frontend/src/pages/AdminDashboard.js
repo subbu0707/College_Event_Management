@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import eventService from "../services/eventService";
 import adminService from "../services/adminService";
 
 const AdminDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -173,6 +175,10 @@ const AdminDashboard = () => {
     if (activeTab === "reports") fetchReports();
     if (activeTab === "audit") fetchAuditLogs();
   }, [activeTab, fetchUsers, searchTerm, roleFilter]);
+
+  const visibleUsers = users.filter(
+    (item) => item.role !== "admin" || item._id === currentUser?._id,
+  );
 
   if (loading) {
     return (
@@ -488,7 +494,7 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          {users.length > 0 ? (
+          {visibleUsers.length > 0 ? (
             <div className="events-table">
               <table>
                 <thead>
@@ -503,7 +509,7 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {visibleUsers.map((user) => (
                     <tr key={user._id}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
