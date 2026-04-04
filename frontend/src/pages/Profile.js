@@ -3,6 +3,9 @@ import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
+  const isStudent = user?.role === "student";
+  const showSemester = isStudent;
+  const idLabel = user?.role === "admin" ? "Admin ID" : "Organizer ID";
   const showRegisteredEvents = user?.role === "student";
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
@@ -124,9 +127,11 @@ const Profile = () => {
             <span className="profile-meta-pill">
               {user.branch || "Branch not set"}
             </span>
-            <span className="profile-meta-pill">
-              Semester {user.semester || "N/A"}
-            </span>
+            {showSemester && (
+              <span className="profile-meta-pill">
+                Semester {user.semester || "N/A"}
+              </span>
+            )}
             {showRegisteredEvents && (
               <span className="profile-meta-pill">
                 {user.registeredEvents?.length || 0} Events
@@ -159,7 +164,7 @@ const Profile = () => {
               </div>
 
               <div>
-                <strong>Roll Number:</strong>
+                <strong>{isStudent ? "Roll Number" : idLabel}:</strong>
                 <p>{user.rollNumber}</p>
               </div>
 
@@ -173,10 +178,12 @@ const Profile = () => {
                 <p>{user.branch}</p>
               </div>
 
-              <div>
-                <strong>Semester:</strong>
-                <p>{user.semester}</p>
-              </div>
+              {showSemester && (
+                <div>
+                  <strong>Semester:</strong>
+                  <p>{user.semester}</p>
+                </div>
+              )}
 
               <div>
                 <strong>Bio:</strong>
@@ -282,7 +289,7 @@ const Profile = () => {
               </div>
 
               <div className="form-group">
-                <label>Roll Number (Read-only)</label>
+                <label>{isStudent ? "Roll Number" : idLabel} (Read-only)</label>
                 <input
                   type="text"
                   value={user.rollNumber}
@@ -312,17 +319,19 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Semester</label>
-                <input
-                  type="number"
-                  name="semester"
-                  value={formData.semester}
-                  onChange={handleFormChange}
-                  min="1"
-                  max="8"
-                />
-              </div>
+              {showSemester && (
+                <div className="form-group">
+                  <label>Semester</label>
+                  <input
+                    type="number"
+                    name="semester"
+                    value={formData.semester}
+                    onChange={handleFormChange}
+                    min="1"
+                    max="8"
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Bio</label>
