@@ -8,6 +8,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    semester: "",
     bio: "",
   });
   const [changePassword, setChangePassword] = useState({
@@ -24,6 +25,7 @@ const Profile = () => {
       setFormData({
         name: user.name || "",
         phone: user.phone || "",
+        semester: user.semester || "",
         bio: user.bio || "",
       });
     }
@@ -266,12 +268,22 @@ const Profile = () => {
 
               <div className="form-group">
                 <label>Email (Read-only)</label>
-                <input type="email" value={user.email} disabled />
+                <input
+                  type="email"
+                  value={user.email}
+                  readOnly
+                  className="profile-readonly-field"
+                />
               </div>
 
               <div className="form-group">
                 <label>Roll Number (Read-only)</label>
-                <input type="text" value={user.rollNumber} disabled />
+                <input
+                  type="text"
+                  value={user.rollNumber}
+                  readOnly
+                  className="profile-readonly-field"
+                />
               </div>
 
               <div className="form-group">
@@ -287,12 +299,24 @@ const Profile = () => {
 
               <div className="form-group">
                 <label>Branch (Read-only)</label>
-                <input type="text" value={user.branch} disabled />
+                <input
+                  type="text"
+                  value={user.branch}
+                  readOnly
+                  className="profile-readonly-field"
+                />
               </div>
 
               <div className="form-group">
-                <label>Semester (Read-only)</label>
-                <input type="text" value={user.semester} disabled />
+                <label>Semester</label>
+                <input
+                  type="number"
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleFormChange}
+                  min="1"
+                  max="8"
+                />
               </div>
 
               <div className="form-group">
