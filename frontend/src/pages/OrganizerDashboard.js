@@ -380,13 +380,15 @@ const OrganizerDashboard = () => {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="btn-icon"
-                        title="Edit"
-                        onClick={() => handleEditEvent(event)}
-                      >
-                        ✏️
-                      </button>
+                      {(event.status || "").toLowerCase() !== "completed" && (
+                        <button
+                          className="btn-icon"
+                          title="Edit"
+                          onClick={() => handleEditEvent(event)}
+                        >
+                          ✏️
+                        </button>
+                      )}
                       <button
                         className="btn-icon"
                         title="View Details"
