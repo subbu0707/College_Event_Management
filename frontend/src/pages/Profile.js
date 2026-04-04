@@ -9,6 +9,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    semester: "",
     bio: "",
   });
   const [changePassword, setChangePassword] = useState({
@@ -25,6 +26,7 @@ const Profile = () => {
       setFormData({
         name: user.name || "",
         phone: user.phone || "",
+        semester: user.semester || "",
         bio: user.bio || "",
       });
     }
@@ -122,6 +124,9 @@ const Profile = () => {
             <span className="profile-meta-pill">
               {user.branch || "Branch not set"}
             </span>
+            <span className="profile-meta-pill">
+              Semester {user.semester || "N/A"}
+            </span>
             {showRegisteredEvents && (
               <span className="profile-meta-pill">
                 {user.registeredEvents?.length || 0} Events
@@ -142,62 +147,57 @@ const Profile = () => {
           <div className="card">
             <div className="card-header">Profile Information</div>
 
-            <div className="profile-info-form">
-              <div className="form-group">
-                <label>Full Name</label>
-                <input type="text" value={user.name || ""} readOnly />
+            <div className="profile-info">
+              <div>
+                <strong>Full Name:</strong>
+                <p>{user.name}</p>
               </div>
 
-              <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={user.email || ""} readOnly />
+              <div>
+                <strong>Email:</strong>
+                <p>{user.email}</p>
               </div>
 
-              <div className="form-group">
-                <label>Roll Number</label>
-                <input type="text" value={user.rollNumber || ""} readOnly />
+              <div>
+                <strong>Roll Number:</strong>
+                <p>{user.rollNumber}</p>
               </div>
 
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  type="text"
-                  value={user.phone || "Not provided"}
-                  readOnly
-                />
+              <div>
+                <strong>Phone:</strong>
+                <p>{user.phone || "Not provided"}</p>
               </div>
 
-              <div className="form-group">
-                <label>Branch</label>
-                <input type="text" value={user.branch || ""} readOnly />
+              <div>
+                <strong>Branch:</strong>
+                <p>{user.branch}</p>
               </div>
 
-              <div className="form-group profile-info-bio">
-                <label>Bio</label>
-                <textarea value={user.bio || "No bio provided"} readOnly />
+              <div>
+                <strong>Semester:</strong>
+                <p>{user.semester}</p>
               </div>
 
-              <div className="form-group">
-                <label>Member Since</label>
-                <input
-                  type="text"
-                  value={new Date(user.createdAt).toLocaleDateString("en-US", {
+              <div>
+                <strong>Bio:</strong>
+                <p>{user.bio || "No bio provided"}</p>
+              </div>
+
+              <div>
+                <strong>Member Since:</strong>
+                <p>
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
                   })}
-                  readOnly
-                />
+                </p>
               </div>
 
               {showRegisteredEvents && (
-                <div className="form-group">
-                  <label>Registered Events</label>
-                  <input
-                    type="text"
-                    value={user.registeredEvents?.length || 0}
-                    readOnly
-                  />
+                <div>
+                  <strong>Registered Events:</strong>
+                  <p>{user.registeredEvents?.length || 0}</p>
                 </div>
               )}
             </div>
@@ -309,6 +309,18 @@ const Profile = () => {
                   value={user.branch}
                   readOnly
                   className="profile-readonly-field"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Semester</label>
+                <input
+                  type="number"
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleFormChange}
+                  min="1"
+                  max="8"
                 />
               </div>
 
