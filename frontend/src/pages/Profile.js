@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [activeSection, setActiveSection] = useState("profile");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -54,6 +55,7 @@ const Profile = () => {
       await updateProfile(formData);
       setSuccessMessage("Profile updated successfully");
       setIsEditMode(false);
+      setActiveSection("profile");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       setErrorMessage(
@@ -108,9 +110,25 @@ const Profile = () => {
   return (
     <div className="container">
       <div className="profile-header">
-        <div className="profile-avatar">👤</div>
-        <h1>{user.name}</h1>
-        <p>{user.email}</p>
+        <div className="profile-cover-glow" />
+        <div className="profile-header-content">
+          <div className="profile-avatar">👤</div>
+          <div className="profile-identity">
+            <h1>{user.name}</h1>
+            <p>{user.email}</p>
+          </div>
+          <div className="profile-meta-row">
+            <span className="profile-meta-pill">
+              {user.branch || "Branch not set"}
+            </span>
+            <span className="profile-meta-pill">
+              Semester {user.semester || "N/A"}
+            </span>
+            <span className="profile-meta-pill">
+              {user.registeredEvents?.length || 0} Events
+            </span>
+          </div>
+        </div>
       </div>
 
       {successMessage && (
@@ -177,39 +195,62 @@ const Profile = () => {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "1rem",
-                marginTop: "1.5rem",
-              }}
-            >
+            <div className="profile-action-row">
               <button
-                className="btn btn-primary"
-                onClick={() => setIsEditMode(true)}
-                style={{ flex: 1 }}
+                className="btn btn-primary btn-compact"
+                onClick={() => {
+                  setIsEditMode(true);
+                  setActiveSection("profile");
+                }}
               >
                 Update Profile
               </button>
               <button
-                className="btn btn-danger"
+                className="btn btn-secondary btn-compact"
                 onClick={() => {
-                  if (window.confirm("Are you sure you want to logout?")) {
-                    logout();
-                    window.location.href = "/login";
-                  }
+                  setIsEditMode(true);
+                  setActiveSection("password");
                 }}
-                style={{ flex: 1 }}
               >
-                Logout
+                Change Password
               </button>
             </div>
           </div>
         </>
       ) : (
         <>
+          <div className="profile-subnav">
+            <button
+              className={`btn btn-small profile-tab ${activeSection === "profile" ? "active" : ""}`}
+              onClick={() => setActiveSection("profile")}
+            >
+              Update Profile
+            </button>
+            <button
+              className={`btn btn-small profile-tab ${activeSection === "password" ? "active" : ""}`}
+              onClick={() => setActiveSection("password")}
+            >
+              Change Password
+            </button>
+            <button
+              className="btn btn-small btn-secondary profile-tab"
+              onClick={() => {
+                setIsEditMode(false);
+                setActiveSection("profile");
+              }}
+            >
+              Back
+            </button>
+          </div>
+
           {/* Update Profile Form */}
-          <div className="card" style={{ marginBottom: "2rem" }}>
+          <div
+            className="card profile-panel"
+            style={{
+              marginBottom: "1.25rem",
+              display: activeSection === "password" ? "none" : "block",
+            }}
+          >
             <div className="card-header">Update Profile</div>
 
             <form onSubmit={handleUpdateProfile}>
@@ -267,9 +308,8 @@ const Profile = () => {
 
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-primary btn-compact"
                 disabled={loading}
-                style={{ width: "100%" }}
               >
                 {loading ? "Updating..." : "Update Profile"}
               </button>
@@ -277,7 +317,13 @@ const Profile = () => {
           </div>
 
           {/* Change Password Form */}
-          <div className="card" style={{ marginBottom: "2rem" }}>
+          <div
+            className="card profile-panel"
+            style={{
+              marginBottom: "1.25rem",
+              display: activeSection === "profile" ? "none" : "block",
+            }}
+          >
             <div className="card-header">Change Password</div>
 
             <form onSubmit={handleChangePassword}>
@@ -321,23 +367,13 @@ const Profile = () => {
 
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-primary btn-compact"
                 disabled={loading}
-                style={{ width: "100%" }}
               >
                 {loading ? "Changing..." : "Change Password"}
               </button>
             </form>
           </div>
-
-          {/* Cancel Button */}
-          <button
-            className="btn btn-secondary"
-            onClick={() => setIsEditMode(false)}
-            style={{ width: "100%" }}
-          >
-            Cancel
-          </button>
         </>
       )}
     </div>
