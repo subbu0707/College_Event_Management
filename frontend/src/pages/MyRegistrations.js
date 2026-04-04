@@ -15,7 +15,11 @@ const MyRegistrations = () => {
         page: currentPage,
         limit: 10,
       });
-      setRegistrations(response.registrations);
+      // Filter out cancelled registrations
+      const activeRegistrations = (response.registrations || []).filter(
+        (reg) => reg.status === "registered",
+      );
+      setRegistrations(activeRegistrations);
       setTotalPages(response.totalPages);
     } catch (err) {
       setError("Failed to fetch registrations");
