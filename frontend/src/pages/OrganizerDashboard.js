@@ -37,7 +37,7 @@ const OrganizerDashboard = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const sortEventsByDashboardStatus = (events = []) => {
+  const sortEventsByDashboardStatus = React.useCallback((events = []) => {
     const getPriority = (event) => {
       if (event.approvalStatus === "pending") return 0;
       if (event.status === "ongoing") return 1;
@@ -54,13 +54,9 @@ const OrganizerDashboard = () => {
 
       return new Date(a.startDate) - new Date(b.startDate);
     });
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = React.useCallback(async () => {
     try {
       setLoading(true);
 
@@ -94,7 +90,11 @@ const OrganizerDashboard = () => {
       console.error("Error fetching dashboard data:", error);
       setLoading(false);
     }
-  };
+  }, [sortEventsByDashboardStatus]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
