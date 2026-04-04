@@ -187,18 +187,27 @@ exports.updateUserRole = async (req, res, next) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role },
-      { new: true, runValidators: true },
-    ).select("-password");
+    const existingUser = await User.findById(req.params.id);
 
-    if (!user) {
+    if (!existingUser) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
+
+    if (existingUser.role === "admin" || existingUser.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Role cannot be updated for admin or inactive users",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true, runValidators: true },
+    ).select("-password");
 
     res.status(200).json({
       success: true,

@@ -536,17 +536,23 @@ const AdminDashboard = () => {
                         )}
                       </td>
                       <td>
-                        <select
-                          onChange={(e) =>
-                            handleUpdateUserRole(user._id, e.target.value)
-                          }
-                          className="role-select"
-                          defaultValue={user.role}
-                        >
-                          <option value="student">Student</option>
-                          <option value="organizer">Organizer</option>
-                          <option value="admin">Admin</option>
-                        </select>
+                        {user.role === "admin" || user.isActive === false ? (
+                          <span className="approval-badge approval-admin">
+                            {user.role}
+                          </span>
+                        ) : (
+                          <select
+                            onChange={(e) =>
+                              handleUpdateUserRole(user._id, e.target.value)
+                            }
+                            className="role-select"
+                            defaultValue={user.role}
+                          >
+                            <option value="student">Student</option>
+                            <option value="organizer">Organizer</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        )}
                         {user.role !== "admin" && user.isActive !== false && (
                           <button
                             className="btn btn-small btn-danger"
