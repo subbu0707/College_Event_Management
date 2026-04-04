@@ -325,15 +325,17 @@ const AdminDashboard = () => {
                           s
                         </p>
                       </div>
-                      <button
-                        className="view-role-btn"
-                        onClick={() => {
-                          setRoleFilter(item._id);
-                          setActiveTab("users");
-                        }}
-                      >
-                        View All →
-                      </button>
+                      {item._id !== "admin" && (
+                        <button
+                          className="view-role-btn"
+                          onClick={() => {
+                            setRoleFilter(item._id);
+                            setActiveTab("users");
+                          }}
+                        >
+                          View All →
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -545,13 +547,15 @@ const AdminDashboard = () => {
                           <option value="organizer">Organizer</option>
                           <option value="admin">Admin</option>
                         </select>
-                        <button
-                          className="btn btn-small btn-danger"
-                          onClick={() => handleDeactivateUser(user._id)}
-                          style={{ marginLeft: "0.5rem" }}
-                        >
-                          Deactivate
-                        </button>
+                        {user.role !== "admin" && user.isActive !== false && (
+                          <button
+                            className="btn btn-small btn-danger"
+                            onClick={() => handleDeactivateUser(user._id)}
+                            style={{ marginLeft: "0.5rem" }}
+                          >
+                            Deactivate
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -74,11 +74,7 @@ exports.getAdminStats = async (req, res, next) => {
       .select("name email role createdAt");
 
     // Combine and sort recent users
-    const recentUsers = [
-      ...recentStudents,
-      ...recentOrganizers,
-      ...recentAdmins,
-    ]
+    const recentUsers = [...recentStudents, ...recentOrganizers]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
 
