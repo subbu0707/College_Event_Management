@@ -1,6 +1,7 @@
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 // Helper function to update event status based on dates
 const updateEventStatus = (event) => {
@@ -237,6 +238,14 @@ exports.createEvent = async (req, res, next) => {
 
     // Populate organizer details
     await event.populate("organizer", "name email phone branch");
+
+    await Notification.create({
+      recipient: req.user._id,
+      title: "Event Created",
+      message: `Your event "${event.title}" has been created and is pending admin approval.`,
+      type: "event_update",
+      event: event._id,
+    });
 
     res.status(201).json({
       success: true,

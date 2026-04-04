@@ -1,4 +1,5 @@
 const Event = require("../models/Event");
+const Notification = require("../models/Notification");
 
 // @desc    Get organizer's events
 // @route   GET /api/events/my-events
@@ -33,6 +34,14 @@ exports.approveEvent = async (req, res, next) => {
     event.approvalStatus = "approved";
     event.approvedBy = req.user._id;
     await event.save();
+
+    await Notification.create({
+      recipient: event.organizer,
+      title: "Event Approved",
+      message: `Your event "${event.title}" is approved.`,
+      type: "event_approved",
+      event: event._id,
+    });
 
     res.status(200).json({
       success: true,
