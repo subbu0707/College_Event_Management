@@ -37,6 +37,25 @@ const OrganizerDashboard = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const sortEventsByDashboardStatus = (events = []) => {
+    const getPriority = (event) => {
+      if (event.approvalStatus === "pending") return 0;
+      if (event.status === "ongoing") return 1;
+      if (event.status === "upcoming") return 2;
+      return 3;
+    };
+
+    return [...events].sort((a, b) => {
+      const priorityDiff = getPriority(a) - getPriority(b);
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      return new Date(a.startDate) - new Date(b.startDate);
+    });
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -47,7 +66,7 @@ const OrganizerDashboard = () => {
 
       // Fetch organizer's events
       const eventsResponse = await eventService.getMyEvents();
-      const events = eventsResponse.data || [];
+      const events = sortEventsByDashboardStatus(eventsResponse.data || []);
 
       setMyEvents(events);
 
