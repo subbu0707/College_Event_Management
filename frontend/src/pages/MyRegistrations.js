@@ -147,14 +147,17 @@ const MyRegistrations = () => {
                 <div
                   style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
                 >
-                  {registration.status === "registered" && (
-                    <button
-                      className="btn btn-danger btn-small"
-                      onClick={() => handleCancelRegistration(registration._id)}
-                    >
-                      Cancel Registration
-                    </button>
-                  )}
+                  {registration.status === "registered" &&
+                    registration.event?.status !== "completed" && (
+                      <button
+                        className="btn btn-danger btn-small"
+                        onClick={() =>
+                          handleCancelRegistration(registration._id)
+                        }
+                      >
+                        Cancel Registration
+                      </button>
+                    )}
                   <a
                     href={`/event/${registration.event?._id}`}
                     className="btn btn-primary btn-small"
